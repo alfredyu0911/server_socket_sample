@@ -23,7 +23,7 @@ char *getTimeString()
 {
 	time_t currentTime;
 	time(&currentTime);
-	char *str = asctime(gmtime(&currentTime));
+	char *str = asctime(localtime(&currentTime));
 	str[strlen(str) - 1] = '\0';
 	return str;
 }
