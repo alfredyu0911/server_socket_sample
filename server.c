@@ -7,6 +7,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define BUF_SIZE 1024
 #define PORT 9527
@@ -17,6 +18,15 @@
 #define MAX_EXIST_CONNECTION 36
 
 int g_exist_connections = 0;
+
+char *getTimeString()
+{
+	time_t currentTime;
+	time(&currentTime);
+	char *str = asctime(gmtime(&currentTime));
+	str[strlen(str) - 1] = '\0';
+	return str;
+}
 
 void *client_handler(void *cl)
 {
@@ -33,10 +43,10 @@ void *client_handler(void *cl)
 		memset(buffer, 0x00, BUF_SIZE);
 		if ( recv(client, buffer, BUF_SIZE, 0) <= 0 )
 		{
-			printf("client %d is disconnected\n", client);
+			printf("[%24s] client %d is disconnected\n", getTimeString(), client);
 			break;
 		}
-		printf("received from client %d, message: %s%c", client, buffer, buffer[strlen(buffer)-1]=='\n' ? '\0' : '\n');
+		printf("[%24s] received from client %d, message: %s%c", getTimeString(), client, buffer, buffer[strlen(buffer)-1]=='\n' ? '\0' : '\n');
 		send(client, buffer, strlen(buffer), 0);
 	}
 	
@@ -70,13 +80,13 @@ struct sockaddr_in create_server(int server_socket, int port, int timeout_sec)
 
 	if ( setsockopt(server_socket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) == -1 )
 	{
-		printf("server creation fail.\n");
+		printf("[%24s] server creation fail.\n", getTimeString());
 		exit(-1);
 	}
 
 	if ( setsockopt(server_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1 )
 	{
-		printf("server creation fail.\n");
+		printf("[%24s] server creation fail.\n", getTimeString());
 		exit(-1);
 	}
 
@@ -89,7 +99,7 @@ int main()
 	int server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if ( server_socket == -1 )
 	{
-		printf("fail to create a socket.\n");
+		printf("[%24s] fail to create a socket.\n", getTimeString());
 		exit(-1);
 	}
 
@@ -99,17 +109,17 @@ int main()
 	// bind the socket with server
 	if ( bind(server_socket, (struct sockaddr*)&server_info, sizeof(server_info)) == -1 )
 	{
-		printf("fail to bind the server socket\n");
+		printf("[%24s] fail to bind the server socket\n", getTimeString());
 		exit(-1);
 	}
 
 	// server start to listening on port
 	if ( listen(server_socket, MAX_PENDING_CLIENT) == -1 )
 	{
-		printf("faile to listening\n");
+		printf("[%24s] fail to listening\n", getTimeString());
 		exit(-1);
 	}
-	printf("start listening on port %d\n", PORT);
+	printf("[%24s] start listening on port %d\n", getTimeString(), PORT);
 
 	struct sockaddr_in client_info;
 	int addrlen, exist_connections=0;
@@ -129,7 +139,7 @@ int main()
 
 		pthread_t thread;
 		g_exist_connections++;
-		printf("prepareing thread for client: %d\n, accepted connections: %d", client, g_exist_connections);
+		printf("[%24s] prepareing thread for client: %d, accepted connections: %d\n", getTimeString(), client, g_exist_connections);
 		pthread_create(&thread, NULL, &client_handler, (void*)&client);
 	}
 
