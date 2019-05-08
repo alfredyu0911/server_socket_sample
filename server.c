@@ -48,9 +48,9 @@ void *client_handler(void *cl)
 			printf("[%24s] client %d is disconnected\n", getTimeString(), client);
 			break;
 		}
-        else if ( error_number == ETIME || error_number == ETIMEDOUT )
+        else if ( error_number < 0 )
         {
-            printf("[%24s] client %d timeout\n", getTimeString(), client);
+            printf("[%24s] error on recv of server thread for client %d, maybe timeout\n", getTimeString(), client);
             break;
         }
 		printf("[%24s] received from client %d, message: %s%c", getTimeString(), client, buffer, buffer[strlen(buffer)-1]=='\n' ? '\0' : '\n');
