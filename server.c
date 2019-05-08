@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <time.h>
+#include <errno.h>
 
 #define BUF_SIZE 1024
 #define PORT 9527
@@ -41,13 +42,25 @@ void *client_handler(void *cl)
 		// send what ever this thread received back to client
 		char buffer[BUF_SIZE];
 		memset(buffer, 0x00, BUF_SIZE);
-		if ( recv(client, buffer, BUF_SIZE, 0) <= 0 )
+        int error_number = recv(client, buffer, BUF_SIZE, 0);
+		if ( error_number == 0 )
 		{
 			printf("[%24s] client %d is disconnected\n", getTimeString(), client);
 			break;
 		}
+        else if ( error_number == ETIME || error_number == ETIMEDOUT )
+        {
+            printf("[%24s] client %d timeout\n", getTimeString(), client);
+            break;
+        }
 		printf("[%24s] received from client %d, message: %s%c", getTimeString(), client, buffer, buffer[strlen(buffer)-1]=='\n' ? '\0' : '\n');
-		send(client, buffer, strlen(buffer), 0);
+        
+		error_number = send(client, buffer, strlen(buffer), 0);
+        if ( error_number <= 0 )
+        {
+            printf("[%24s] error on send of server thread for client %d\n", getTimeString(), client);
+            break;
+        }
 	}
 	
 	g_exist_connections--;
